@@ -24,6 +24,8 @@ export function activate(context: vscode.ExtensionContext) {
          // Update the stored ETag
          const newETag = response.headers.etag;
          config.update('etag', newETag, vscode.ConfigurationTarget.Global);
+         config.update('etag', newETag, vscode.ConfigurationTarget.Workspace);
+         config.update('etag', newETag, vscode.ConfigurationTarget.WorkspaceFolder);
          return true;
       } catch (error) {
          console.error('Error checking for updates: ', error);
@@ -54,11 +56,14 @@ export function activate(context: vscode.ExtensionContext) {
       // Updates the Lua.workspace.libray setting
       const globalStoragePath = context.globalStorageUri.fsPath;
       const config = vscode.workspace.getConfiguration('Lua');
-      const library = config.get<string[]>('workspace.library') || [];
+      const lsSetting = 'workspace.library';
+      const library = config.get<string[]>(lsSetting) || [];
       const libraryPath = globalStoragePath + '\\file-downloader-downloads\\macroquest\\mq-definitions-master';
       if (!library.includes(libraryPath)) {
          library.push(libraryPath);
-         config.update('workspace.library', library, vscode.ConfigurationTarget.Global);
+         config.update(lsSetting, library, vscode.ConfigurationTarget.Global);
+         config.update(lsSetting, library, vscode.ConfigurationTarget.Workspace);
+         config.update(lsSetting, library, vscode.ConfigurationTarget.WorkspaceFolder);
          vscode.window.showInformationMessage('The Lua Language Server settings have been updated to use the installed MacroQuest Lua Definitions.');
       } else {
          vscode.window.showInformationMessage('The Lua Language Server settings are already configured to use the installed MacroQuest Lua Definitions.');
