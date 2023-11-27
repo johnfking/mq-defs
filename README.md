@@ -11,8 +11,4 @@ Updates the Global Lua Language Server settings in your settings.json file to po
 
 ## Requirements
 
-This extension requires the Lua Language Server (LuaLS) extension to be installed and enabled.
-
-## Known Issues
-
-None at this time.
+This extension requires VS Code and the Lua Language Server (LuaLS) extension to be installed and enabled.
