@@ -1,9 +1,5 @@
 # Change Log
 
-All notable changes to the "mq-defs" extension will be documented in this file.
+## [1.0.0] - 2020-05-01
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
-
-## [Unreleased]
-
-- Initial release
+- Initial release.  Downloads the MacroQuest Lua Definitions and updates the LuaLS settings in the settings.json file.
