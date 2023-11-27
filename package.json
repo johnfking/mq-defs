@@ -2,11 +2,12 @@
    "name": "mq-defs",
    "displayName": "mq-defs",
    "description": "MacroQuest Lua Language Definitions",
-   "version": "0.0.1",
+   "version": "1.0.0",
    "repository": {
       "type": "git",
       "url": "https://github.com/johnfking/mq-defs"
    },
+   "publisher": "zenithcodeforge",
    "engines": {
       "vscode": "^1.84.0"
    },

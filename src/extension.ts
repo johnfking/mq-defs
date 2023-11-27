@@ -55,7 +55,7 @@ export function activate(context: vscode.ExtensionContext) {
       const globalStoragePath = context.globalStorageUri.fsPath;
       const config = vscode.workspace.getConfiguration('Lua');
       const library = config.get<string[]>('workspace.library') || [];
-      const libraryPath = globalStoragePath + '\\test\\mq-definitions-master';
+      const libraryPath = globalStoragePath + '\\file-downloader-downloads\\macroquest\\mq-definitions-master';
       if (!library.includes(libraryPath)) {
          library.push(libraryPath);
          config.update('workspace.library', library, vscode.ConfigurationTarget.Global);
