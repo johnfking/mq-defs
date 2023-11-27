@@ -9,7 +9,7 @@ export function activate(context: vscode.ExtensionContext) {
       const repoUrl = 'https://github.com/macroquest/mq-definitions/archive/refs/heads/master.zip';
       const config = vscode.workspace.getConfiguration('mq-defs');
       const storedETag = config.get<string>('etag', '');
-      vscode.window.showInformationMessage('Checking for new MacroQuest Lua Defintions.');      
+      vscode.window.showInformationMessage('Checking for new MacroQuest Lua Defintions.');
       try {
          const response = await axios.get(repoUrl, {
             headers: { 'If-None-Match': storedETag },
@@ -32,6 +32,8 @@ export function activate(context: vscode.ExtensionContext) {
    }
 
    async function updateDefinitions(context: vscode.ExtensionContext) {
+      console.log('MacroQuest Definition Downloader Active.');
+
       vscode.window.showInformationMessage('Downloading MacroQuest Lua Defintions.');
       const fileDownloader: FileDownloader = await getApi();
 
@@ -63,8 +65,15 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
    }
+   // Check for updates on startup
+   checkForUpdates(context).then(isUpdatable => {
+      if (isUpdatable) {
+         updateDefinitions(context).catch(console.error);
+      } else {
+         vscode.window.showInformationMessage('MacroQuest Lua Definitions are up to date.');
+      }
+   }).catch(console.error);
 
-   console.log('MacroQuest Definition Downloader Active.');
    let disposable = vscode.commands.registerCommand('mq-defs.download', async () => {
       checkForUpdates(context).then(isUpdatable => {
          if (isUpdatable) {
@@ -72,8 +81,8 @@ export function activate(context: vscode.ExtensionContext) {
          } else {
             vscode.window.showInformationMessage('MacroQuest Lua Defintions are up to date.');
          }
-   });
-   context.subscriptions.push(disposable);
+      });
+      context.subscriptions.push(disposable);
    });
 }
 export function deactivate() { }
