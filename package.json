@@ -15,7 +15,7 @@
       "Other"
    ],
    "activationEvents": [
-      "*"
+      "onLanguage:lua"
    ],
    "main": "./out/extension.js",
    "contributes": {
