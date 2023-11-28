@@ -2,7 +2,7 @@
    "name": "mq-defs",
    "displayName": "mq-defs",
    "description": "MacroQuest Lua Language Definitions",
-   "version": "1.0.2",
+   "version": "1.0.4",
    "repository": {
       "type": "git",
       "url": "https://github.com/johnfking/mq-defs"
@@ -36,6 +36,10 @@
          }
       ]
    },
+   "extensionDependencies": [
+      "mindaro-dev.file-downloader",
+      "sumneko.lua"
+   ],
    "scripts": {
       "vscode:prepublish": "npm run compile",
       "compile": "tsc -p ./",
