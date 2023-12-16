@@ -23,3 +23,7 @@
 ## [1.0.5] - 2023-11-28
 
 - Changes the activation of the script when the code language is Lua
+
+## [1.0.6] - 2023-12-15
+
+- Adds the ability to change the Github Branch to fetch Definitions
