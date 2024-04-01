@@ -33,6 +33,17 @@
                "default": "master",
                "description": "Branch for MacroQuest Definitions."
 
+            },
+            "mq-defs.plugins.etag": {
+               "type": "string",
+               "default": "",
+               "description": "ETag for checking updates of MacroQuest Plugin Definitions. Clear this value to force re-download."
+            },
+            "mq-defs.plugins.branch": {
+               "type": "string",
+               "default": "main",
+               "description": "Branch for MacroQuest Plugin Definitions."
+
             }
          }
       },
@@ -40,6 +51,10 @@
          {
             "command": "mq-defs.download",
             "title": "MQ: Download Definitions"
+         },
+         {
+            "command": "mq-defs.plugins.download",
+            "title": "MQ: Download Plugin Definitions"
          }
       ]
    },
