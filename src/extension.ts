@@ -3,15 +3,44 @@ import axios from 'axios';
 import { Uri } from 'vscode';
 import { getApi, FileDownloader } from "@microsoft/vscode-file-downloader-api";
 
-var mqDefinitionsRepositoryUrl = (branch: string) => `https://github.com/macroquest/mq-definitions/archive/refs/heads/${branch}.zip`;
-var mqPluginDefinitionsRepositoryUrl = (branch: string) => `https://github.com/peonMQ/mq-plugin-definitions/archive/refs/heads/${branch}.zip`;
+type Definition = {
+   Name: string
+   ETagKey: () => string
+   FileName: () => string
+   Command: () => string
+   CurrentBranch: (config: vscode.WorkspaceConfiguration) => string
+   RepositoryUrl: (branch: string) => string
+   StoragePath: (globalStoragePath: string, branch: string) => string
+};
 
-async function checkForUpdates(config: vscode.WorkspaceConfiguration, repoUrl: string, eTagKey: string): Promise<boolean> {
+const mqDefinitions: Definition = {
+   Name: "MacroQuest Lua Definitions",
+   ETagKey: () => "etag",
+   FileName: () => "macroquest",
+   Command: () => "mq-defs.download",
+   CurrentBranch: (config: vscode.WorkspaceConfiguration) => config.get<string>('branch', ''),
+   RepositoryUrl: (branch: string) => `https://github.com/macroquest/mq-definitions/archive/refs/heads/${branch}.zip`,
+   StoragePath: (globalStoragePath: string, branch: string) => `${globalStoragePath}\\file-downloader-downloads\\macroquest\\mq-definitions-${branch}`
+};
+
+const mqPluginDefinitions: Definition = {
+   Name: "MacroQuest Plugin Lua Definitions",
+   ETagKey: () => "plugins.etag",
+   FileName: () => "macroquest-plugin",
+   Command: () => "mq-defs.plugins.download",
+   CurrentBranch: (config: vscode.WorkspaceConfiguration) => config.get<string>('plugins.branch', ''),
+   RepositoryUrl: (branch: string) => `https://github.com/peonMQ/mq-plugin-definitions/archive/refs/heads/${branch}.zip`,
+   StoragePath: (globalStoragePath: string, branch: string) => `${globalStoragePath}\\file-downloader-downloads\\macroquest-plugins\\mq-plugin-definitions-${branch}`
+};
+
+
+async function checkForUpdates(config: vscode.WorkspaceConfiguration, definition: Definition, branch: string): Promise<boolean> {
+   const eTagKey = definition.ETagKey();
    const storedETag = config.get<string>(eTagKey, '');
-   vscode.window.showInformationMessage('Checking for new MacroQuest Lua Defintions.');
+   vscode.window.showInformationMessage(`Checking for new ${definition.Name}.`);
    
    try {
-      const response = await axios.get(repoUrl, {
+      const response = await axios.get(definition.RepositoryUrl(branch), {
          headers: { 'If-None-Match': storedETag },
          validateStatus: status => status === 200 || status === 304
       });
@@ -33,16 +62,16 @@ async function checkForUpdates(config: vscode.WorkspaceConfiguration, repoUrl: s
    }
 }
 
-async function updateDefinitions(context: vscode.ExtensionContext, branch: string) {
+async function updateDefinitions(context: vscode.ExtensionContext, definition: Definition, branch: string) {
    console.log('MacroQuest Definition Downloader Active.');
 
-   vscode.window.showInformationMessage('Downloading MacroQuest Lua Defintions.');
+   vscode.window.showInformationMessage(`Downloading ${definition.Name}.`);
    const fileDownloader: FileDownloader = await getApi();
 
    try {
       await fileDownloader.downloadFile(
-         Uri.parse(mqDefinitionsRepositoryUrl(branch)),
-         'macroquest',
+         Uri.parse(definition.RepositoryUrl(branch)),
+         definition.FileName(),
          context,
          /* cancellationToken */ undefined,
          /* progressCallback */ undefined,
@@ -58,107 +87,61 @@ async function updateDefinitions(context: vscode.ExtensionContext, branch: strin
    const config = vscode.workspace.getConfiguration('Lua');
    const lsSetting = 'workspace.library';
    const library = config.get<string[]>(lsSetting) || [];
-   const libraryPath = `${globalStoragePath}\\file-downloader-downloads\\macroquest\\mq-definitions-${branch}`;
+   const libraryPath = definition.StoragePath(globalStoragePath, branch);
    if (!library.includes(libraryPath)) {
       library.push(libraryPath);
       config.update(lsSetting, library, vscode.ConfigurationTarget.Global);
       config.update(lsSetting, library, vscode.ConfigurationTarget.Workspace);
       config.update(lsSetting, library, vscode.ConfigurationTarget.WorkspaceFolder);
-      vscode.window.showInformationMessage('The Lua Language Server settings have been updated to use the installed MacroQuest Lua Definitions.');
+      vscode.window.showInformationMessage(`The Lua Language Server settings have been updated to use the installed ${definition.Name}.`);
    } else {
-      vscode.window.showInformationMessage('The Lua Language Server settings are already configured to use the installed MacroQuest Lua Definitions.');
+      vscode.window.showInformationMessage(`The Lua Language Server settings are already configured to use the installed ${definition.Name}.`);
    }
-
 }
 
-async function updatePluginDefinitions(context: vscode.ExtensionContext, branch: string) {
-   console.log('MacroQuest Plugin Definition Downloader Active.');
+async function checkAndUpdate(context: vscode.ExtensionContext, config: vscode.WorkspaceConfiguration, definition: Definition) {
+   const doUpdate = await checkForUpdates(config, definition, definition.CurrentBranch(config));
+   if (doUpdate) {
+      try {
+         await updateDefinitions(context, definition, definition.CurrentBranch(config));
+      }
+      catch (error) {
+         console.error(error);
+         throw error;
+      }
+   } else {
+      vscode.window.showInformationMessage(`${definition.Name} are up to date.`);
+   }
+}
 
-   vscode.window.showInformationMessage('Downloading MacroQuest Plugin Lua Defintions.');
-   const fileDownloader: FileDownloader = await getApi();
 
+async function initialCheckAndRegisrerCommand(context: vscode.ExtensionContext, config: vscode.WorkspaceConfiguration, definition: Definition) {
    try {
-      await fileDownloader.downloadFile(
-         Uri.parse(mqPluginDefinitionsRepositoryUrl(branch)),
-         'macroquest-plugins',
-         context,
-         /* cancellationToken */ undefined,
-         /* progressCallback */ undefined,
-         { shouldUnzip: true });
+      await checkAndUpdate(context, config, definition);
    }
    catch (error) {
       console.error(error);
-      throw error;
    }
 
-   // Updates the Lua.workspace.libray setting
-   const globalStoragePath = context.globalStorageUri.fsPath;
-   const config = vscode.workspace.getConfiguration('Lua');
-   const lsSetting = 'workspace.library';
-   const library = config.get<string[]>(lsSetting) || [];
-   const libraryPath = `${globalStoragePath}\\file-downloader-downloads\\macroquest-plugins\\mq-plugin-definitions-${branch}`;
-   if (!library.includes(libraryPath)) {
-      library.push(libraryPath);
-      config.update(lsSetting, library, vscode.ConfigurationTarget.Global);
-      config.update(lsSetting, library, vscode.ConfigurationTarget.Workspace);
-      config.update(lsSetting, library, vscode.ConfigurationTarget.WorkspaceFolder);
-      vscode.window.showInformationMessage('The Lua Language Server settings have been updated to use the installed MacroQuest Plugin Lua Definitions.');
-   } else {
-      vscode.window.showInformationMessage('The Lua Language Server settings are already configured to use the installed MacroQuest Plugin Lua Definitions.');
-   }
+   let disposable = vscode.commands.registerCommand('mq-defs.download', async () => {
+      await checkAndUpdate(context, config, definition);
+      context.subscriptions.push(disposable);
+   });
 }
 
 export async function activate(context: vscode.ExtensionContext) {
-   const currentBranch = vscode.workspace.getConfiguration().get<string>('mq-defs.branch', '');
-   if (currentBranch === '') {
+   const config = vscode.workspace.getConfiguration('mq-defs');
+   if (mqDefinitions.CurrentBranch(config) === '') {
       vscode.window.showWarningMessage('Please configure the MQ Definitions branch in your settings.');
    } else {
-      vscode.window.showInformationMessage('Selected branch for MQ Definitions: ' + currentBranch);
+      vscode.window.showInformationMessage('Selected branch for MQ Definitions: ' + mqDefinitions.CurrentBranch(config));
    }
 
    // Check for updates on startup
-   const config = vscode.workspace.getConfiguration('mq-defs');
-   const repoUrl = mqDefinitionsRepositoryUrl(currentBranch);
-   checkForUpdates(config, repoUrl, 'etag').then(isUpdatable => {
-      if (isUpdatable) {
-         updateDefinitions(context, currentBranch).catch(console.error);
-      } else {
-         vscode.window.showInformationMessage('MacroQuest Lua Definitions are up to date.');
-      }
-   }).catch(console.error);
+   await initialCheckAndRegisrerCommand(context, config, mqDefinitions);
 
-   let disposable = vscode.commands.registerCommand('mq-defs.download', async () => {
-      checkForUpdates(config, repoUrl, 'etag').then(isUpdatable => {
-         if (isUpdatable) {
-            updateDefinitions(context, currentBranch).catch(console.error);
-         } else {
-            vscode.window.showInformationMessage('MacroQuest Lua Defintions are up to date.');
-         }
-      });
-      context.subscriptions.push(disposable);
-   });
-
-   const currentPluginsBranch = vscode.workspace.getConfiguration().get<string>('mq-defs.plugins.branch', '');
-   if (currentBranch !== '') {
-      const pluginsRepoUrl = mqPluginDefinitionsRepositoryUrl(currentPluginsBranch);
-      checkForUpdates(config, pluginsRepoUrl, 'plugins.etag').then(isUpdatable => {
-         if (isUpdatable) {
-            updatePluginDefinitions(context, currentPluginsBranch).catch(console.error);
-         } else {
-            vscode.window.showInformationMessage('MacroQuest Lua Definitions are up to date.');
-         }
-      }).catch(console.error);
-   
-      disposable = vscode.commands.registerCommand('mq-defs.plugins.download', async () => {
-         checkForUpdates(config, pluginsRepoUrl, 'plugins.etag').then(isUpdatable => {
-            if (isUpdatable) {
-               updatePluginDefinitions(context, currentPluginsBranch).catch(console.error);
-            } else {
-               vscode.window.showInformationMessage('MacroQuest Lua Defintions are up to date.');
-            }
-         });
-         context.subscriptions.push(disposable);
-      });
+   if (mqPluginDefinitions.CurrentBranch(config) !== '') {
+      await initialCheckAndRegisrerCommand(context, config, mqPluginDefinitions);
    }
 }
 
