@@ -29,7 +29,7 @@ const mqPluginDefinitions: Definition = {
    FileName: () => "macroquest-plugin",
    Command: () => "mq-defs.plugins.download",
    CurrentBranch: (config: vscode.WorkspaceConfiguration) => config.get<string>('plugins.branch', ''),
-   RepositoryUrl: (branch: string) => `https://github.com/peonMQ/mq-plugin-definitions/archive/refs/heads/${branch}.zip`,
+   RepositoryUrl: (branch: string) => `https://github.com/macroquest/mq-plugin-definitions/archive/refs/heads/${branch}.zip`,
    StoragePath: (globalStoragePath: string, branch: string) => `${globalStoragePath}\\file-downloader-downloads\\macroquest-plugins\\mq-plugin-definitions-${branch}`
 };
 
