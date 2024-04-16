@@ -27,3 +27,7 @@
 ## [1.0.6] - 2023-12-15
 
 - Adds the ability to change the Github Branch to fetch Definitions
+
+## [1.0.7] - 2023-12-15
+
+- Adds the switch to limit toaster notifications to only when Defintions are updated

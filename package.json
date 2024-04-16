@@ -2,7 +2,7 @@
    "name": "mq-defs",
    "displayName": "mq-defs",
    "description": "MacroQuest Lua Language Definitions",
-   "version": "1.0.6",
+   "version": "1.0.8",
    "repository": {
       "type": "git",
       "url": "https://github.com/johnfking/mq-defs"
@@ -26,13 +26,12 @@
             "mq-defs.etag": {
                "type": "string",
                "default": "",
-               "description": "ETag for checking updates of MacroQuest Definitions. Clear this value to force re-download."
+               "description": "ETag for checking updates of MacroQuest Core Definitions. Clear this value to force re-download."
             },
             "mq-defs.branch": {
                "type": "string",
                "default": "master",
-               "description": "Branch for MacroQuest Definitions."
-
+               "description": "Branch for MacroQuest Core Definitions."
             },
             "mq-defs.plugins.etag": {
                "type": "string",
@@ -44,13 +43,18 @@
                "default": "main",
                "description": "Branch for MacroQuest Plugin Definitions."
 
+            },
+            "mq-defs.limit-notifications": {
+               "type": "boolean",
+               "default": false,
+               "description": "Only notify when new Definitions are loaded."
             }
          }
       },
       "commands": [
          {
-            "command": "mq-defs.download",
-            "title": "MQ: Download Definitions"
+            "command": "mq-defs.core.download",
+            "title": "MQ: Download Core Definitions"
          },
          {
             "command": "mq-defs.plugins.download",

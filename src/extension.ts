@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import * as vscode from 'vscode';
 import axios from 'axios';
 import { Uri } from 'vscode';
@@ -93,6 +94,7 @@ async function updateDefinitions(context: vscode.ExtensionContext, definition: D
       config.update(lsSetting, library, vscode.ConfigurationTarget.Global);
       config.update(lsSetting, library, vscode.ConfigurationTarget.Workspace);
       config.update(lsSetting, library, vscode.ConfigurationTarget.WorkspaceFolder);
+      if 
       vscode.window.showInformationMessage(`The Lua Language Server settings have been updated to use the installed ${definition.Name}.`);
    } else {
       vscode.window.showInformationMessage(`The Lua Language Server settings are already configured to use the installed ${definition.Name}.`);
@@ -146,12 +148,11 @@ export async function activate(context: vscode.ExtensionContext) {
    
    
    if (mqDefinitions.CurrentBranch(config) !== '') {
-      await initialCheckAndRegisterCommand(context, config, mqDefinitions, 'download-core');
+      await initialCheckAndRegisterCommand(context, config, mqDefinitions, 'core.download');
    }
 
    if (mqPluginDefinitions.CurrentBranch(config) !== '') {
-      await initialCheckAndRegisterCommand(context, config, mqPluginDefinitions, 'download-plugins');
+      await initialCheckAndRegisterCommand(context, config, mqPluginDefinitions, 'plugins.download');
    }
 }
-
 export function deactivate() { }
