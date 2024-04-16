@@ -115,7 +115,7 @@ async function checkAndUpdate(context: vscode.ExtensionContext, config: vscode.W
 }
 
 
-async function initialCheckAndRegisrerCommand(context: vscode.ExtensionContext, config: vscode.WorkspaceConfiguration, definition: Definition) {
+async function initialCheckAndRegisterCommand(context: vscode.ExtensionContext, config: vscode.WorkspaceConfiguration, definition: Definition, commandKeyword: string) {
    try {
       await checkAndUpdate(context, config, definition);
    }
@@ -123,7 +123,7 @@ async function initialCheckAndRegisrerCommand(context: vscode.ExtensionContext, 
       console.error(error);
    }
 
-   let disposable = vscode.commands.registerCommand('mq-defs.download', async () => {
+   let disposable = vscode.commands.registerCommand(`mq-defs.${commandKeyword}`, async () => {
       await checkAndUpdate(context, config, definition);
       context.subscriptions.push(disposable);
    });
@@ -131,17 +131,26 @@ async function initialCheckAndRegisrerCommand(context: vscode.ExtensionContext, 
 
 export async function activate(context: vscode.ExtensionContext) {
    const config = vscode.workspace.getConfiguration('mq-defs');
+   
    if (mqDefinitions.CurrentBranch(config) === '') {
       vscode.window.showWarningMessage('Please configure the MQ Definitions branch in your settings.');
    } else {
       vscode.window.showInformationMessage('Selected branch for MQ Definitions: ' + mqDefinitions.CurrentBranch(config));
    }
 
-   // Check for updates on startup
-   await initialCheckAndRegisrerCommand(context, config, mqDefinitions);
+   if (mqPluginDefinitions.CurrentBranch(config) === '') {
+      vscode.window.showWarningMessage('Please configure the MQ Plugins branch in your settings.');
+   } else {
+      vscode.window.showInformationMessage('Selected branch for MQ Plugin Definitions: ' + mqPluginDefinitions.CurrentBranch(config));
+   }
+   
+   
+   if (mqDefinitions.CurrentBranch(config) !== '') {
+      await initialCheckAndRegisterCommand(context, config, mqDefinitions, 'download-core');
+   }
 
    if (mqPluginDefinitions.CurrentBranch(config) !== '') {
-      await initialCheckAndRegisrerCommand(context, config, mqPluginDefinitions);
+      await initialCheckAndRegisterCommand(context, config, mqPluginDefinitions, 'download-plugins');
    }
 }
 
