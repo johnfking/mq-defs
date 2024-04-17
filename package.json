@@ -23,31 +23,35 @@
          "type": "object",
          "title": "MQ Definitions Configuration",
          "properties": {
+            "mq-defs.limit-notifications": {
+               "order": 0,
+               "type": "boolean",
+               "default": true,
+               "description": "Only notify when new Definitions are loaded."
+            },
             "mq-defs.etag": {
+               "order": 2,
                "type": "string",
                "default": "",
                "description": "ETag for checking updates of MacroQuest Core Definitions. Clear this value to force re-download."
             },
             "mq-defs.branch": {
+               "order": 1,
                "type": "string",
                "default": "master",
                "description": "Branch for MacroQuest Core Definitions."
             },
             "mq-defs.plugins.etag": {
+               "order": 4,
                "type": "string",
                "default": "",
                "description": "ETag for checking updates of MacroQuest Plugin Definitions. Clear this value to force re-download."
             },
             "mq-defs.plugins.branch": {
+               "order": 3,
                "type": "string",
                "default": "main",
                "description": "Branch for MacroQuest Plugin Definitions."
-
-            },
-            "mq-defs.limit-notifications": {
-               "type": "boolean",
-               "default": false,
-               "description": "Only notify when new Definitions are loaded."
             }
          }
       },

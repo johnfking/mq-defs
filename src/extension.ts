@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 import * as vscode from 'vscode';
 import axios from 'axios';
 import { Uri } from 'vscode';
@@ -34,12 +33,18 @@ const mqPluginDefinitions: Definition = {
    StoragePath: (globalStoragePath: string, branch: string) => `${globalStoragePath}\\file-downloader-downloads\\macroquest-plugins\\mq-plugin-definitions-${branch}`
 };
 
+let notifications: boolean;
+
 
 async function checkForUpdates(config: vscode.WorkspaceConfiguration, definition: Definition, branch: string): Promise<boolean> {
    const eTagKey = definition.ETagKey();
    const storedETag = config.get<string>(eTagKey, '');
+
+   // We ask the users if they want to limit notifications, but in code its easier to think the opposite.
+   notifications = !vscode.workspace.getConfiguration().get<boolean>('mq-defs.limit-notifications', true);
+
    vscode.window.showInformationMessage(`Checking for new ${definition.Name}.`);
-   
+
    try {
       const response = await axios.get(definition.RepositoryUrl(branch), {
          headers: { 'If-None-Match': storedETag },
@@ -65,6 +70,7 @@ async function checkForUpdates(config: vscode.WorkspaceConfiguration, definition
 
 async function updateDefinitions(context: vscode.ExtensionContext, definition: Definition, branch: string) {
    console.log('MacroQuest Definition Downloader Active.');
+
 
    vscode.window.showInformationMessage(`Downloading ${definition.Name}.`);
    const fileDownloader: FileDownloader = await getApi();
@@ -94,10 +100,11 @@ async function updateDefinitions(context: vscode.ExtensionContext, definition: D
       config.update(lsSetting, library, vscode.ConfigurationTarget.Global);
       config.update(lsSetting, library, vscode.ConfigurationTarget.Workspace);
       config.update(lsSetting, library, vscode.ConfigurationTarget.WorkspaceFolder);
-      if 
       vscode.window.showInformationMessage(`The Lua Language Server settings have been updated to use the installed ${definition.Name}.`);
    } else {
-      vscode.window.showInformationMessage(`The Lua Language Server settings are already configured to use the installed ${definition.Name}.`);
+      if (notifications) {
+         vscode.window.showInformationMessage(`The Lua Language Server settings are already configured to use the installed ${definition.Name}.`);
+      }
    }
 }
 
@@ -112,7 +119,9 @@ async function checkAndUpdate(context: vscode.ExtensionContext, config: vscode.W
          throw error;
       }
    } else {
-      vscode.window.showInformationMessage(`${definition.Name} are up to date.`);
+      if (notifications) {
+         vscode.window.showInformationMessage(`${definition.Name} are up to date.`);
+      }
    }
 }
 
@@ -133,20 +142,24 @@ async function initialCheckAndRegisterCommand(context: vscode.ExtensionContext, 
 
 export async function activate(context: vscode.ExtensionContext) {
    const config = vscode.workspace.getConfiguration('mq-defs');
-   
+
    if (mqDefinitions.CurrentBranch(config) === '') {
       vscode.window.showWarningMessage('Please configure the MQ Definitions branch in your settings.');
    } else {
-      vscode.window.showInformationMessage('Selected branch for MQ Definitions: ' + mqDefinitions.CurrentBranch(config));
+      if (notifications) {
+         vscode.window.showInformationMessage('Selected branch for MQ Definitions: ' + mqDefinitions.CurrentBranch(config));
+      }
    }
 
    if (mqPluginDefinitions.CurrentBranch(config) === '') {
       vscode.window.showWarningMessage('Please configure the MQ Plugins branch in your settings.');
    } else {
-      vscode.window.showInformationMessage('Selected branch for MQ Plugin Definitions: ' + mqPluginDefinitions.CurrentBranch(config));
+      if (notifications) {
+         vscode.window.showInformationMessage('Selected branch for MQ Plugin Definitions: ' + mqPluginDefinitions.CurrentBranch(config));
+      }
    }
-   
-   
+
+
    if (mqDefinitions.CurrentBranch(config) !== '') {
       await initialCheckAndRegisterCommand(context, config, mqDefinitions, 'core.download');
    }
