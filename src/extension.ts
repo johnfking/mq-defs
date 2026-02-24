@@ -134,7 +134,7 @@ async function initialCheckAndRegisterCommand(context: vscode.ExtensionContext, 
       console.error(error);
    }
 
-   let disposable = vscode.commands.registerCommand(`mq-defs.${commandKeyword}`, async () => {
+   const disposable = vscode.commands.registerCommand(`mq-defs.${commandKeyword}`, async () => {
       await checkAndUpdate(context, config, definition);
       context.subscriptions.push(disposable);
    });
