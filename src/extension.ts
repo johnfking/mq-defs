@@ -2,38 +2,27 @@ import * as vscode from 'vscode';
 import axios from 'axios';
 import { Uri } from 'vscode';
 import { getApi, FileDownloader } from "@microsoft/vscode-file-downloader-api";
-
-type Definition = {
-   Name: string
-   ETagKey: () => string
-   FileName: () => string
-   Command: () => string
-   CurrentBranch: (config: vscode.WorkspaceConfiguration) => string
-   RepositoryUrl: (branch: string) => string
-   StoragePath: (globalStoragePath: string, branch: string) => string
-};
+import { Definition, buildStoragePath, mergeLibraryPath, shouldShowOptionalNotifications } from './definitions';
 
 const mqDefinitions: Definition = {
    Name: "MacroQuest Lua Definitions",
    ETagKey: () => "etag",
    FileName: () => "macroquest",
-   Command: () => "mq-defs.download",
    CurrentBranch: (config: vscode.WorkspaceConfiguration) => config.get<string>('branch', ''),
    RepositoryUrl: (branch: string) => `https://github.com/macroquest/mq-definitions/archive/refs/heads/${branch}.zip`,
-   StoragePath: (globalStoragePath: string, branch: string) => `${globalStoragePath}\\file-downloader-downloads\\macroquest\\mq-definitions-${branch}`
+   StoragePath: (globalStoragePath: string, branch: string) => buildStoragePath(globalStoragePath, 'macroquest', `mq-definitions-${branch}`)
 };
 
 const mqPluginDefinitions: Definition = {
    Name: "MacroQuest Plugin Lua Definitions",
    ETagKey: () => "plugins.etag",
    FileName: () => "macroquest-plugin",
-   Command: () => "mq-defs.plugins.download",
    CurrentBranch: (config: vscode.WorkspaceConfiguration) => config.get<string>('plugins.branch', ''),
    RepositoryUrl: (branch: string) => `https://github.com/macroquest/mq-plugin-definitions/archive/refs/heads/${branch}.zip`,
-   StoragePath: (globalStoragePath: string, branch: string) => `${globalStoragePath}\\file-downloader-downloads\\macroquest-plugins\\mq-plugin-definitions-${branch}`
+   StoragePath: (globalStoragePath: string, branch: string) => buildStoragePath(globalStoragePath, 'macroquest-plugins', `mq-plugin-definitions-${branch}`)
 };
 
-let notifications: boolean;
+let notifications = false;
 
 
 async function checkForUpdates(config: vscode.WorkspaceConfiguration, definition: Definition, branch: string): Promise<boolean> {
@@ -41,7 +30,7 @@ async function checkForUpdates(config: vscode.WorkspaceConfiguration, definition
    const storedETag = config.get<string>(eTagKey, '');
 
    // We ask the users if they want to limit notifications, but in code its easier to think the opposite.
-   notifications = !vscode.workspace.getConfiguration().get<boolean>('mq-defs.limit-notifications', true);
+   notifications = shouldShowOptionalNotifications(vscode.workspace.getConfiguration().get<boolean>('mq-defs.limit-notifications', true));
 
    vscode.window.showInformationMessage(`Checking for new ${definition.Name}.`);
 
@@ -95,11 +84,11 @@ async function updateDefinitions(context: vscode.ExtensionContext, definition: D
    const lsSetting = 'workspace.library';
    const library = config.get<string[]>(lsSetting) || [];
    const libraryPath = definition.StoragePath(globalStoragePath, branch);
-   if (!library.includes(libraryPath)) {
-      library.push(libraryPath);
-      config.update(lsSetting, library, vscode.ConfigurationTarget.Global);
-      config.update(lsSetting, library, vscode.ConfigurationTarget.Workspace);
-      config.update(lsSetting, library, vscode.ConfigurationTarget.WorkspaceFolder);
+   const mergedLibrary = mergeLibraryPath(library, libraryPath);
+   if (mergedLibrary.changed) {
+      config.update(lsSetting, mergedLibrary.updated, vscode.ConfigurationTarget.Global);
+      config.update(lsSetting, mergedLibrary.updated, vscode.ConfigurationTarget.Workspace);
+      config.update(lsSetting, mergedLibrary.updated, vscode.ConfigurationTarget.WorkspaceFolder);
       vscode.window.showInformationMessage(`The Lua Language Server settings have been updated to use the installed ${definition.Name}.`);
    } else {
       if (notifications) {
@@ -136,8 +125,9 @@ async function initialCheckAndRegisterCommand(context: vscode.ExtensionContext, 
 
    const disposable = vscode.commands.registerCommand(`mq-defs.${commandKeyword}`, async () => {
       await checkAndUpdate(context, config, definition);
-      context.subscriptions.push(disposable);
    });
+
+   context.subscriptions.push(disposable);
 }
 
 export async function activate(context: vscode.ExtensionContext) {
