@@ -76,7 +76,8 @@
       "watch": "tsc -watch -p ./",
       "pretest": "npm run compile && npm run lint",
       "lint": "eslint src --ext ts",
-      "test": "node ./out/test/runTest.js"
+      "test": "node ./out/test/runTest.js",
+      "test:unit": "npm run compile && mocha --ui tdd \"out/test/unit/**/*.test.js\""
    },
    "devDependencies": {
       "@types/mocha": "^10.0.10",
@@ -95,10 +96,5 @@
    "dependencies": {
       "@microsoft/vscode-file-downloader-api": "^1.0.1",
       "axios": "^1.13.5"
-   },
-   "overrides": {
-      "minimatch": "^10.2.1",
-      "diff": "^8.0.3",
-      "glob": "^13.0.6"
    }
 }
