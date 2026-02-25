@@ -10,11 +10,6 @@ export type Definition = {
    StoragePath: (globalStoragePath: string, branch: string) => string
 };
 
-export type InitializationTarget = {
-   definition: Definition
-   commandKeyword: 'core.download' | 'plugins.download'
-};
-
 export function buildStoragePath(globalStoragePath: string, sourceFolder: string, extractedFolder: string): string {
    return path.join(globalStoragePath, 'file-downloader-downloads', sourceFolder, extractedFolder);
 }
@@ -29,12 +24,4 @@ export function mergeLibraryPath(library: string[], libraryPath: string): { upda
 
 export function shouldShowOptionalNotifications(limitNotifications: boolean): boolean {
    return !limitNotifications;
-}
-
-export function buildCommandId(commandKeyword: InitializationTarget['commandKeyword']): string {
-   return `mq-defs.${commandKeyword}`;
-}
-
-export function getInitializationTargets(config: vscode.WorkspaceConfiguration, definitions: InitializationTarget[]): InitializationTarget[] {
-   return definitions.filter(({ definition }) => definition.CurrentBranch(config) !== '');
 }
