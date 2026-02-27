@@ -3,9 +3,10 @@ import * as path from 'path';
 
 export type Definition = {
    Name: string
-   ETagKey: () => string
+   SHAKey: () => string
    FileName: () => string
    CurrentBranch: (config: vscode.WorkspaceConfiguration) => string
+   ShaUrl: (branch: string) => string
    RepositoryUrl: (branch: string) => string
    StoragePath: (globalStoragePath: string, branch: string) => string
 };
