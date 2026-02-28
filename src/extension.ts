@@ -71,7 +71,7 @@ async function updateDefinitions(context: vscode.ExtensionContext, config: vscod
       throw error;
    }
 
-   // Updates the Lua.workspace.libray setting
+   // Updates the Lua.workspace.library setting
    const globalStoragePath = context.globalStorageUri.fsPath;
    const luaConfig = vscode.workspace.getConfiguration('Lua');
    const lsSetting = 'workspace.library';
@@ -79,9 +79,9 @@ async function updateDefinitions(context: vscode.ExtensionContext, config: vscod
    const libraryPath = definition.StoragePath(globalStoragePath, branch);
    const mergedLibrary = mergeLibraryPath(library, libraryPath);
    if (mergedLibrary.changed) {
-      config.update(lsSetting, mergedLibrary.updated, vscode.ConfigurationTarget.Global);
-      config.update(lsSetting, mergedLibrary.updated, vscode.ConfigurationTarget.Workspace);
-      config.update(lsSetting, mergedLibrary.updated, vscode.ConfigurationTarget.WorkspaceFolder);
+      luaConfig.update(lsSetting, mergedLibrary.updated, vscode.ConfigurationTarget.Global);
+      luaConfig.update(lsSetting, mergedLibrary.updated, vscode.ConfigurationTarget.Workspace);
+      luaConfig.update(lsSetting, mergedLibrary.updated, vscode.ConfigurationTarget.WorkspaceFolder);
       vscode.window.showInformationMessage(`The Lua Language Server settings have been updated to use the installed ${definition.Name}.`);
    } else {
       if (notifications) {
@@ -125,6 +125,9 @@ async function initialCheckAndRegisterCommand(context: vscode.ExtensionContext, 
 export async function activate(context: vscode.ExtensionContext) {
    const config = vscode.workspace.getConfiguration('mq-defs');
 
+   // Initialize notifications setting
+   notifications = shouldShowOptionalNotifications(config.get<boolean>('limit-notifications', true));
+
    if (mqDefinitions.CurrentBranch(config) === '') {
       vscode.window.showWarningMessage('Please configure the MQ Definitions branch in your settings.');
    } else {
@@ -137,4 +140,8 @@ export async function activate(context: vscode.ExtensionContext) {
       await initialCheckAndRegisterCommand(context, config, mqDefinitions, 'download');
    }
 }
+
 export function deactivate() { }
+
+// Export for testing
+export { checkForUpdates, updateDefinitions, mqDefinitions };
