@@ -128,16 +128,16 @@ export async function activate(context: vscode.ExtensionContext) {
    // Initialize notifications setting
    notifications = shouldShowOptionalNotifications(config.get<boolean>('limit-notifications', true));
 
+   // Always register the command so it's available in the command palette
+   await initialCheckAndRegisterCommand(context, config, mqDefinitions, 'download');
+
+   // Show appropriate messages after command is registered
    if (mqDefinitions.CurrentBranch(config) === '') {
       vscode.window.showWarningMessage('Please configure the MQ Definitions branch in your settings.');
    } else {
       if (notifications) {
          vscode.window.showInformationMessage('Selected branch for MQ Definitions: ' + mqDefinitions.CurrentBranch(config));
       }
-   }
-
-   if (mqDefinitions.CurrentBranch(config) !== '') {
-      await initialCheckAndRegisterCommand(context, config, mqDefinitions, 'download');
    }
 }
 

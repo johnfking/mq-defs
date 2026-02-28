@@ -15,7 +15,8 @@
       "Other"
    ],
    "activationEvents": [
-      "onLanguage:lua"
+      "onLanguage:lua",
+      "onCommand:mq-defs.download"
    ],
    "main": "./out/extension.js",
    "contributes": {
