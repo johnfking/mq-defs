@@ -2,7 +2,6 @@
 .vscode-test/**
 src/**
 out/test/**
-node_modules/**
 .git/**
 .gitignore
 .eslint*
@@ -10,3 +9,18 @@ eslint.config.js
 tsconfig.json
 **/*.map
 **/*.ts
+# Exclude dev dependencies but keep production dependencies
+node_modules/@types/**
+node_modules/@typescript-eslint/**
+node_modules/@vscode/test-electron/**
+node_modules/@vscode/vsce/**
+node_modules/eslint/**
+node_modules/mocha/**
+node_modules/sinon/**
+node_modules/typescript/**
+node_modules/typescript-eslint/**
+node_modules/glob/**
+node_modules/@eslint/**
+node_modules/@humanfs/**
+node_modules/@humanwhocodes/**
+node_modules/@nodelib/**
