@@ -33,5 +33,8 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
+      - name: Package extension (validate)
+        run: npx vsce package
+
       - name: Verify VSIX contents
         run: npx vsce ls
