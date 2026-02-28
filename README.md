@@ -1,7 +1,7 @@
 # MacroQuest Lua Definitions for VS Code
 
 [![Version](https://img.shields.io/visual-studio-marketplace/v/zenithcodeforge.mq-defs?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=zenithcodeforge.mq-defs)
-[![License](https://img.shields.io/github/license/johnfking/mq-defs?style=flat-square)](LICENSE)
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg?style=flat-square)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/johnfking/mq-defs/ci.yml?branch=master&style=flat-square)](https://github.com/johnfking/mq-defs/actions)
 
 > Supercharge your MacroQuest Lua development with intelligent autocomplete, hover documentation, and type checking powered by the official MQ definitions.
