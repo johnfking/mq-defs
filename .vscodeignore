@@ -3,6 +3,7 @@
 src/**
 out/test/**
 .git/**
+.github/**
 .gitignore
 .eslint*
 eslint.config.js
