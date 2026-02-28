@@ -6,28 +6,19 @@ import { Definition, buildStoragePath, mergeLibraryPath, shouldShowOptionalNotif
 
 const mqDefinitions: Definition = {
    Name: "MacroQuest Lua Definitions",
-   ETagKey: () => "etag",
+   SHAKey: () => "shaKey",
    FileName: () => "macroquest",
-   CurrentBranch: (config: vscode.WorkspaceConfiguration) => config.get<string>('branch', ''),
+   CurrentBranch: (config: vscode.WorkspaceConfiguration) => config.get<string>('branch', 'master'),
+   ShaUrl: (branch: string) => `https://api.github.com/repos/macroquest/mq-definitions/commits/${branch}`,
    RepositoryUrl: (branch: string) => `https://github.com/macroquest/mq-definitions/archive/refs/heads/${branch}.zip`,
    StoragePath: (globalStoragePath: string, branch: string) => buildStoragePath(globalStoragePath, 'macroquest', `mq-definitions-${branch}`)
 };
 
-const mqPluginDefinitions: Definition = {
-   Name: "MacroQuest Plugin Lua Definitions",
-   ETagKey: () => "plugins.etag",
-   FileName: () => "macroquest-plugin",
-   CurrentBranch: (config: vscode.WorkspaceConfiguration) => config.get<string>('plugins.branch', ''),
-   RepositoryUrl: (branch: string) => `https://github.com/macroquest/mq-plugin-definitions/archive/refs/heads/${branch}.zip`,
-   StoragePath: (globalStoragePath: string, branch: string) => buildStoragePath(globalStoragePath, 'macroquest-plugins', `mq-plugin-definitions-${branch}`)
-};
+let notifications: boolean;
 
-let notifications = false;
-
-
-async function checkForUpdates(config: vscode.WorkspaceConfiguration, definition: Definition, branch: string): Promise<boolean> {
-   const eTagKey = definition.ETagKey();
-   const storedETag = config.get<string>(eTagKey, '');
+async function checkForUpdates(config: vscode.WorkspaceConfiguration, definition: Definition): Promise<{update: boolean, latestSHA: string}> {
+   const shaKey = definition.SHAKey();
+   const storedSHA = config.get<string>(shaKey, '');
 
    // We ask the users if they want to limit notifications, but in code its easier to think the opposite.
    notifications = shouldShowOptionalNotifications(vscode.workspace.getConfiguration().get<boolean>('mq-defs.limit-notifications', true));
@@ -35,35 +26,32 @@ async function checkForUpdates(config: vscode.WorkspaceConfiguration, definition
    vscode.window.showInformationMessage(`Checking for new ${definition.Name}.`);
 
    try {
-      const response = await axios.get(definition.RepositoryUrl(branch), {
-         headers: { 'If-None-Match': storedETag },
-         validateStatus: status => status === 200 || status === 304
+      const branch = definition.CurrentBranch(config);
+      const response = await axios.get(`${definition.ShaUrl(branch)}`, {
+         headers: { 'User-Agent': 'VSCode Extension' },
+         validateStatus: status => status === 200
       });
 
-      if (response.status === 304) {
+      const latestSHA = response.data.sha as string;
+      if (latestSHA === storedSHA) {
          console.log('No update needed.');
-         return false;
+         return { update: false, latestSHA: storedSHA };
       }
 
-      // Update the stored ETag
-      const newETag = response.headers.etag;
-      config.update(eTagKey, newETag, vscode.ConfigurationTarget.Global);
-      config.update(eTagKey, newETag, vscode.ConfigurationTarget.Workspace);
-      config.update(eTagKey, newETag, vscode.ConfigurationTarget.WorkspaceFolder);
-      return true;
+      return { update: true, latestSHA };
    } catch (error) {
       console.error('Error checking for updates: ', error);
-      return false;
+      return { update: false, latestSHA: storedSHA };
    }
 }
 
-async function updateDefinitions(context: vscode.ExtensionContext, definition: Definition, branch: string) {
+async function updateDefinitions(context: vscode.ExtensionContext, config: vscode.WorkspaceConfiguration, definition: Definition, latestSHA: string) {
    console.log('MacroQuest Definition Downloader Active.');
-
+   const shaKey = definition.SHAKey();
+   const branch = definition.CurrentBranch(config);
 
    vscode.window.showInformationMessage(`Downloading ${definition.Name}.`);
    const fileDownloader: FileDownloader = await getApi();
-
    try {
       await fileDownloader.downloadFile(
          Uri.parse(definition.RepositoryUrl(branch)),
@@ -72,6 +60,11 @@ async function updateDefinitions(context: vscode.ExtensionContext, definition: D
          /* cancellationToken */ undefined,
          /* progressCallback */ undefined,
          { shouldUnzip: true });
+
+      // Update the stored SHA
+      config.update(shaKey, latestSHA, vscode.ConfigurationTarget.Global);
+      config.update(shaKey, latestSHA, vscode.ConfigurationTarget.Workspace);
+      config.update(shaKey, latestSHA, vscode.ConfigurationTarget.WorkspaceFolder);
    }
    catch (error) {
       console.error(error);
@@ -80,9 +73,9 @@ async function updateDefinitions(context: vscode.ExtensionContext, definition: D
 
    // Updates the Lua.workspace.libray setting
    const globalStoragePath = context.globalStorageUri.fsPath;
-   const config = vscode.workspace.getConfiguration('Lua');
+   const luaConfig = vscode.workspace.getConfiguration('Lua');
    const lsSetting = 'workspace.library';
-   const library = config.get<string[]>(lsSetting) || [];
+   const library = luaConfig.get<string[]>(lsSetting) || [];
    const libraryPath = definition.StoragePath(globalStoragePath, branch);
    const mergedLibrary = mergeLibraryPath(library, libraryPath);
    if (mergedLibrary.changed) {
@@ -98,10 +91,10 @@ async function updateDefinitions(context: vscode.ExtensionContext, definition: D
 }
 
 async function checkAndUpdate(context: vscode.ExtensionContext, config: vscode.WorkspaceConfiguration, definition: Definition) {
-   const doUpdate = await checkForUpdates(config, definition, definition.CurrentBranch(config));
-   if (doUpdate) {
+   const doUpdateResult = await checkForUpdates(config, definition);
+   if (doUpdateResult.update) {
       try {
-         await updateDefinitions(context, definition, definition.CurrentBranch(config));
+         await updateDefinitions(context, config, definition, doUpdateResult.latestSHA);
       }
       catch (error) {
          console.error(error);
@@ -113,7 +106,6 @@ async function checkAndUpdate(context: vscode.ExtensionContext, config: vscode.W
       }
    }
 }
-
 
 async function initialCheckAndRegisterCommand(context: vscode.ExtensionContext, config: vscode.WorkspaceConfiguration, definition: Definition, commandKeyword: string) {
    try {
@@ -141,21 +133,8 @@ export async function activate(context: vscode.ExtensionContext) {
       }
    }
 
-   if (mqPluginDefinitions.CurrentBranch(config) === '') {
-      vscode.window.showWarningMessage('Please configure the MQ Plugins branch in your settings.');
-   } else {
-      if (notifications) {
-         vscode.window.showInformationMessage('Selected branch for MQ Plugin Definitions: ' + mqPluginDefinitions.CurrentBranch(config));
-      }
-   }
-
-
    if (mqDefinitions.CurrentBranch(config) !== '') {
-      await initialCheckAndRegisterCommand(context, config, mqDefinitions, 'core.download');
-   }
-
-   if (mqPluginDefinitions.CurrentBranch(config) !== '') {
-      await initialCheckAndRegisterCommand(context, config, mqPluginDefinitions, 'plugins.download');
+      await initialCheckAndRegisterCommand(context, config, mqDefinitions, 'download');
    }
 }
 export function deactivate() { }

@@ -29,40 +29,24 @@
                "default": true,
                "description": "Only notify when new Definitions are loaded."
             },
-            "mq-defs.etag": {
+            "mq-defs.shaKey": {
                "order": 2,
                "type": "string",
                "default": "",
-               "description": "ETag for checking updates of MacroQuest Core Definitions. Clear this value to force re-download."
+               "description": "SHA key for checking updates of MacroQuest Definitions. Clear this value to force re-download."
             },
             "mq-defs.branch": {
                "order": 1,
                "type": "string",
                "default": "master",
-               "description": "Branch for MacroQuest Core Definitions."
-            },
-            "mq-defs.plugins.etag": {
-               "order": 4,
-               "type": "string",
-               "default": "",
-               "description": "ETag for checking updates of MacroQuest Plugin Definitions. Clear this value to force re-download."
-            },
-            "mq-defs.plugins.branch": {
-               "order": 3,
-               "type": "string",
-               "default": "main",
-               "description": "Branch for MacroQuest Plugin Definitions."
+               "description": "Branch for MacroQuest Definitions."
             }
          }
       },
       "commands": [
          {
-            "command": "mq-defs.core.download",
-            "title": "MQ: Download Core Definitions"
-         },
-         {
-            "command": "mq-defs.plugins.download",
-            "title": "MQ: Download Plugin Definitions"
+            "command": "mq-defs.download",
+            "title": "MQ: Download Definitions"
          }
       ]
    },
