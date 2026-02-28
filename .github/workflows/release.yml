@@ -1,12 +1,15 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*'  # Triggers on version tags like v1.0.8, v1.0.9, etc.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.0.9)'
+        required: true
+        type: string
 
 permissions:
-  contents: write  # Required for creating releases
+  contents: write
 
 jobs:
   release:
@@ -15,6 +18,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -22,8 +28,16 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Install dependencies
         run: npm ci
+
+      - name: Update version in package.json
+        run: npm version ${{ inputs.version }} --no-git-tag-version
 
       - name: Compile
         run: npm run compile
@@ -34,19 +48,16 @@ jobs:
       - name: Run unit tests
         run: npm run test:unit
 
-      - name: Extract version from tag
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
-      - name: Verify package.json version matches tag
+      - name: Commit version bump
         run: |
-          PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          TAG_VERSION="${{ steps.get_version.outputs.VERSION }}"
-          if [ "$PACKAGE_VERSION" != "$TAG_VERSION" ]; then
-            echo "Error: package.json version ($PACKAGE_VERSION) doesn't match tag version ($TAG_VERSION)"
-            exit 1
-          fi
-          echo "✅ Version match confirmed: $PACKAGE_VERSION"
+          git add package.json package-lock.json
+          git commit -m "chore: bump version to ${{ inputs.version }}"
+          git push
+
+      - name: Create and push tag
+        run: |
+          git tag v${{ inputs.version }}
+          git push origin v${{ inputs.version }}
 
       - name: Package extension
         run: npx vsce package
@@ -58,9 +69,11 @@ jobs:
           echo "filename=$VSIX_FILE" >> $GITHUB_OUTPUT
           echo "📦 Packaged: $VSIX_FILE"
 
-      - name: Create Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ inputs.version }}
+          name: v${{ inputs.version }}
           files: ${{ steps.package.outputs.filename }}
           draft: false
           prerelease: false
@@ -85,6 +98,10 @@ jobs:
         run: |
           echo "## 🎉 Release Published!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Version**: ${{ steps.get_version.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ inputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "- **VSIX**: ${{ steps.package.outputs.filename }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Release**: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.get_version.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Release**: https://github.com/${{ github.repository }}/releases/tag/v${{ inputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Downloads" >> $GITHUB_STEP_SUMMARY
+          echo "- [Release Page](https://github.com/${{ github.repository }}/releases/tag/v${{ inputs.version }})" >> $GITHUB_STEP_SUMMARY
+          echo "- [VSIX File](https://github.com/${{ github.repository }}/releases/download/v${{ inputs.version }}/${{ steps.package.outputs.filename }})" >> $GITHUB_STEP_SUMMARY
