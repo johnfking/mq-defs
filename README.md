@@ -168,7 +168,9 @@ This project maintains high test coverage:
 
 ## 📄 License
 
-[MIT](LICENSE) © [johnfking](https://github.com/johnfking)
+[CC BY-NC-SA 4.0](LICENSE) © 2023 [John King](https://github.com/johnfking)
+
+This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
 
 ## 🙏 Acknowledgments
 
